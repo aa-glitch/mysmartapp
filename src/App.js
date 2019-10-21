@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import Navigation from './components/navigation/navigation';
-import Clarifai from 'clarifai';
 import Logo from './components/logo/logo';
 import ImageForm from './components/imageform/imageform';
 import FaceRecognition from './components/facerecognition/facerecognition';
@@ -9,10 +8,6 @@ import Register from './components/register/register';
 import Signin from './components/signin/signin';
 import Particles from 'react-particles-js';
 import './App.css';
-
-const app = new Clarifai.App({
-  apiKey: 'd4e27f3ddb9a4e5484b4915a38727102'
-});
 
 
 const particlesOptions = {
@@ -29,7 +24,7 @@ const particlesOptions = {
 
 const initialState = {
   input: '',
-  imageUrl: '',
+  imageURL: '',
   box: {},
   route: 'signin',
   isSignedIn: false,
@@ -82,25 +77,32 @@ class App extends Component {
   }
 
   onButtonSubmit = () => {
-    this.setState({ imageURL: this.state.input })
-    app.models.predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
+    this.setState({ imageURL: this.state.input });
+    fetch('https://radiant-shore-10546.herokuapp.com/imageurl', {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: this.state.input
+          })
+    })
+      .then(response => response.json())
       .then(response => {
-        if(response){
-          fetch('http://localhost:3000/signin', {
-            method: 'post',
+        if (response) {
+          fetch('https://radiant-shore-10546.herokuapp.com/image', {
+            method: 'put',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                input: this.state.input
-             })
+              id: this.state.user.id
+            })
           })
             .then(response => response.json())
             .then(count => {
-              this.setState(Object.assign(this.state.user, {entries: count}))
+              this.setState(Object.assign(this.state.user, { entries: count }))
             })
             .catch(console.log)
         }
-          this.displayFaceBox(this.calculateFaceLocation(response))
-        })
+        this.displayFaceBox(this.calculateFaceLocation(response))
+      })
       .catch(err => console.log(err));
   }
 
@@ -125,9 +127,9 @@ class App extends Component {
         {route === 'home'
           ? <div>
             <Logo />
-            <Rank  
-            name={this.state.user.name} 
-            entries={this.state.user.entries}
+            <Rank
+              name={this.state.user.name}
+              entries={this.state.user.entries}
             />
             <ImageForm
               onInputChange={this.onInputChange}
